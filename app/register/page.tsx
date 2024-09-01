@@ -1,8 +1,9 @@
 "use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -13,7 +14,7 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const res = await fetch("/api/login", {
+      const res = await fetch("/api/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -22,21 +23,21 @@ export default function LoginPage() {
       });
 
       if (res.ok) {
-        router.push("/dashboard");
+        router.push("/login");
       } else {
         const data = await res.json();
         setError(data.message);
       }
     } catch (err) {
-      setError("Invalid email or password");
+      setError("Something went wrong");
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="w-full max-w-md p-8 bg-white shadow-md rounded">
-        <h1 className="text-2xl font-semibold text-center mb-6 text-red-500">
-          Admin Login
+        <h1 className="text-2xl font-semibold text-center mb-6 text-blue-500">
+          Register
         </h1>
         {error && <p className="text-red-500 text-sm">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -66,7 +67,7 @@ export default function LoginPage() {
             type="submit"
             className="w-full py-2 px-4 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700"
           >
-            Sign In
+            Register
           </button>
         </form>
       </div>
