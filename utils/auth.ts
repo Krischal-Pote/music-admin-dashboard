@@ -1,4 +1,5 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
+import { jwtDecode } from "jwt-decode";
 import bcrypt from "bcryptjs";
 
 const SECRET_KEY = process.env.JWT_SECRET || "your_secret_key_here"; // Ensure this is in your environment variables
@@ -31,4 +32,21 @@ export const comparePassword = async (
   hashedPassword: string
 ): Promise<boolean> => {
   return await bcrypt.compare(password, hashedPassword);
+};
+export const getCurrentUser = (): DecodedToken | null => {
+  console.log(typeof window);
+  if (typeof window !== "undefined") {
+    const token = localStorage?.getItem("accessToken");
+    if (!token) return null;
+
+    try {
+      const decoded = jwtDecode<DecodedToken>(token);
+      return decoded;
+    } catch (error) {
+      console.error("Error decoding token:", error);
+      return null;
+    }
+  } else {
+    return null;
+  }
 };

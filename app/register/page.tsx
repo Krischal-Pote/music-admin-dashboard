@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getCurrentUser } from "@/utils/auth";
 
 const RegisterPage: React.FC = () => {
   const router = useRouter();
@@ -17,6 +18,7 @@ const RegisterPage: React.FC = () => {
     role: "artist",
   });
   const [error, setError] = useState<string | null>(null);
+  const currentUser = getCurrentUser();
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -41,6 +43,16 @@ const RegisterPage: React.FC = () => {
       setError(data.message);
     }
   };
+
+  useEffect(() => {
+    if (currentUser) {
+      router.push("/dashboard");
+    }
+  }, []);
+
+  if (currentUser) {
+    return null;
+  }
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
