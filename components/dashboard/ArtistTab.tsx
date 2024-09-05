@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -10,121 +9,109 @@ import {
   importCSV,
   exportCSV,
 } from "../../utils/artist";
-import { UserRole } from "../../types";
+import ArtistForm from "./ArtistForm";
+import Pagination from "../dashboard/Pagination";
 
-interface Artist {
-  id: number;
-  name: string;
-  dob: string;
-  gender: string;
-  address: string;
-  // add other fields as per your artist schema
-}
-
-const ArtistTab: React.FC<{ userRole: UserRole }> = ({ userRole }) => {
-  const [artists, setArtists] = useState<Artist[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+const ArtistTab: React.FC = () => {
+  const [artists, setArtists] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const fetchArtists = async () => {
-      setIsLoading(true);
-      const artistsData = await getArtists();
-      setArtists(artistsData);
-      setIsLoading(false);
-    };
+    fetchArtists(currentPage);
+  }, [currentPage]);
 
-    fetchArtists();
-  }, []);
-
-  const handleCreate = async (artist: Artist) => {
-    await createArtist(artist);
-    // Reload artists after creation
-    setArtists(await getArtists());
+  const fetchArtists = async (page: number) => {
+    setLoading(true);
+    const data = await getArtists(page); // Fetch paginated artist data
+    setArtists(data.artists);
+    setTotalPages(data.totalPages);
+    setLoading(false);
   };
 
-  const handleUpdate = async (id: number, artist: Artist) => {
-    await updateArtist(id, artist);
-    setArtists(await getArtists());
+  const handleCreateArtist = async (artistData) => {
+    await createArtist(artistData);
+    fetchArtists(currentPage); // Refresh artist list
   };
 
-  const handleDelete = async (id: number) => {
-    await deleteArtist(id);
-    setArtists(await getArtists());
+  const handleUpdateArtist = async (artistId, updatedData) => {
+    await updateArtist(artistId, updatedData);
+    fetchArtists(currentPage); // Refresh artist list
   };
 
-  const handleImportCSV = async () => {
-    await importCSV();
-    setArtists(await getArtists());
+  const handleDeleteArtist = async (artistId) => {
+    await deleteArtist(artistId);
+    fetchArtists(currentPage); // Refresh artist list
   };
 
-  const handleExportCSV = async () => {
+  const handleCSVImport = async (file) => {
+    await importCSV(file);
+    fetchArtists(currentPage); // Refresh artist list
+  };
+
+  const handleCSVExport = async () => {
     await exportCSV();
   };
 
-  if (isLoading) return <div>Loading...</div>;
-
   return (
     <div>
-      <h2 className="text-xl font-bold mb-4">Artist Management</h2>
-      {userRole === "artist_manager" && (
+      <h2 className="text-2xl font-bold mb-4">Artist Management</h2>
+
+      {/* Create Artist */}
+      <ArtistForm onSubmit={handleCreateArtist} />
+
+      {/* CSV Import/Export */}
+      <div className="my-4">
         <button
-          onClick={handleImportCSV}
-          className="bg-green-500 text-white px-4 py-2 mb-4"
+          className="mr-4 px-4 py-2 bg-blue-500 text-white"
+          onClick={handleCSVExport}
         >
-          Import CSV
+          Export Artists CSV
         </button>
+        <input
+          type="file"
+          onChange={(e) => handleCSVImport(e.target.files[0])}
+        />
+      </div>
+
+      {/* Artist List */}
+      {loading ? (
+        <p>Loading artists...</p>
+      ) : (
+        <div>
+          <ul>
+            {artists.map((artist) => (
+              <li key={artist.id} className="mb-4">
+                <p>{artist.name}</p>
+                <div>
+                  <button
+                    onClick={() =>
+                      router.push(`/dashboard/artists/${artist.id}/songs`)
+                    }
+                  >
+                    View Songs
+                  </button>
+                  <button onClick={() => handleUpdateArtist(artist.id, artist)}>
+                    Edit
+                  </button>
+                  <button onClick={() => handleDeleteArtist(artist.id)}>
+                    Delete
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </div>
       )}
-      {userRole === "artist_manager" && (
-        <button
-          onClick={handleExportCSV}
-          className="bg-blue-500 text-white px-4 py-2 mb-4"
-        >
-          Export CSV
-        </button>
-      )}
-      {/* Render artists table */}
-      <table className="min-w-full bg-white">
-        <thead>
-          <tr>
-            {/* Table headers */}
-            <th className="text-black">Name</th>
-            <th className="text-black">Date of Birth</th>
-            <th className="text-black">Gender</th>
-            <th className="text-black">Address</th>
-            <th className="text-black"> Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {artists.map((artist) => (
-            <tr key={artist.id}>
-              <td>{artist.name}</td>
-              <td>{artist.dob}</td>
-              <td>{artist.gender}</td>
-              <td>{artist.address}</td>
-              <td>
-                {/* Update and delete buttons for artist_manager */}
-                {userRole === "artist_manager" && (
-                  <>
-                    <button
-                      onClick={() => handleUpdate(artist.id, artist)}
-                      className="bg-yellow-500 text-white px-2 py-1"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(artist.id)}
-                      className="bg-red-500 text-white px-2 py-1"
-                    >
-                      Delete
-                    </button>
-                  </>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
 };

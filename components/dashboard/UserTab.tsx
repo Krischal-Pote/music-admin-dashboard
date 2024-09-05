@@ -103,6 +103,7 @@ const UserTab: React.FC = () => {
     setEditingUser(user._id);
     setEditingUserData({
       first_name: user.first_name,
+      last_name: user.last_name,
       email: user.email,
       phone: user.phone || "",
       gender: user.gender || "",
@@ -167,6 +168,7 @@ const UserTab: React.FC = () => {
           <thead>
             <tr>
               <th className="px-4 py-2 text-black">Name</th>
+              <th className="px-4 py-2 text-black">Last Name</th>
               <th className="px-4 py-2 text-black">Email</th>
               <th className="px-4 py-2 text-black">Phone</th>
               <th className="px-4 py-2 text-black">Gender</th>
@@ -181,6 +183,9 @@ const UserTab: React.FC = () => {
               <tr key={user._id}>
                 <td className="border px-4 py-2 text-black">
                   {user.first_name}
+                </td>
+                <td className="border px-4 py-2 text-black">
+                  {user.last_name}
                 </td>
                 <td className="border px-4 py-2 text-black">{user.email}</td>
                 <td className="border px-4 py-2 text-black">{user.phone}</td>
@@ -205,8 +210,9 @@ const UserTab: React.FC = () => {
                     Edit
                   </Button>
                   <Button
+                    type="primary"
+                    danger
                     onClick={() => showDeleteModal(user._id)}
-                    type="danger"
                   >
                     Delete
                   </Button>
@@ -225,10 +231,18 @@ const UserTab: React.FC = () => {
         onCancel={handleCancel}
       >
         <Input
+          className="mb-4 placeholder:#000000"
           placeholder="First Name"
           value={newUser.first_name || ""}
           onChange={(e) =>
             setNewUser({ ...newUser, first_name: e.target.value })
+          }
+        />
+        <Input
+          placeholder="Last Name"
+          value={newUser.last_name || ""}
+          onChange={(e) =>
+            setNewUser({ ...newUser, last_name: e.target.value })
           }
         />
         <Input
@@ -273,9 +287,9 @@ const UserTab: React.FC = () => {
           onChange={(value) => setNewUser({ ...newUser, role: value })}
           style={{ width: "100%", marginBottom: 10 }}
         >
-          <Option value="Admin">Admin</Option>
-          <Option value="User">User</Option>
-          <Option value="Manager">Manager</Option>
+          <Option value="super_admin">Admin</Option>
+          <Option value="artist">Artist</Option>
+          <Option value="artist_manger">Artist Manager</Option>
         </Select>
         <Input
           placeholder="Address"
@@ -298,6 +312,16 @@ const UserTab: React.FC = () => {
             setEditingUserData({
               ...editingUserData,
               first_name: e.target.value,
+            })
+          }
+        />
+        <Input
+          placeholder="Last Name"
+          value={editingUserData.last_name || ""}
+          onChange={(e) =>
+            setEditingUserData({
+              ...editingUserData,
+              last_name: e.target.value,
             })
           }
         />
@@ -360,9 +384,9 @@ const UserTab: React.FC = () => {
           }
           style={{ width: "100%", marginBottom: 10 }}
         >
-          <Option value="Admin">Admin</Option>
-          <Option value="User">User</Option>
-          <Option value="Manager">Manager</Option>
+          <Option value="super_admin">Admin</Option>
+          <Option value="artist">Artist </Option>
+          <Option value="artist_manger">Artist Manager</Option>
         </Select>
         <Input
           placeholder="Address"

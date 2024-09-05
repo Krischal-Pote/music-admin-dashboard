@@ -10,7 +10,7 @@ import { UserRole } from "../../types"; // Define user roles as a type
 
 const DashboardPage: React.FC = () => {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<string>("user");
+  const [activeTab, setActiveTab] = useState<string>("");
   const [userRole, setUserRole] = useState<UserRole | null>(null);
 
   useEffect(() => {
@@ -20,6 +20,14 @@ const DashboardPage: React.FC = () => {
         router.push("/");
       } else {
         setUserRole(user.role);
+        // Set the initial active tab based on user role
+        if (user.role === "super_admin") {
+          setActiveTab("user");
+        } else if (user.role === "artist_manager") {
+          setActiveTab("artist");
+        } else if (user.role === "artist") {
+          setActiveTab("music");
+        }
       }
     };
 
@@ -27,16 +35,27 @@ const DashboardPage: React.FC = () => {
   }, [router]);
 
   const renderTabContent = () => {
-    switch (activeTab) {
-      case "user":
-        return <UserTab />;
-      case "artist":
-        return <ArtistTab />;
-      case "music":
-        return <MusicTab />;
-      default:
-        return <UserTab />;
+    if (activeTab === "user" && userRole === "super_admin") {
+      return <UserTab />;
     }
+
+    if (
+      activeTab === "artist" &&
+      (userRole === "super_admin" || userRole === "artist_manager")
+    ) {
+      return <ArtistTab />;
+    }
+
+    if (
+      activeTab === "music" &&
+      (userRole === "super_admin" ||
+        userRole === "artist_manager" ||
+        userRole === "artist")
+    ) {
+      return <MusicTab userRole={userRole} />;
+    }
+
+    return null; // Default return if no conditions are met
   };
 
   if (!userRole) {
@@ -86,7 +105,6 @@ const DashboardPage: React.FC = () => {
       </div>
 
       {/* Main Content Area */}
-
       <div className="w-[90%] p-8">
         <div className="w-[100%] flex justify-end">
           <button

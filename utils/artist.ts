@@ -1,128 +1,48 @@
-interface Artist {
-  id: number;
-  name: string;
-  dob: string;
-  gender: string;
-  address: string;
-  // Add other fields as per your artist schema
-}
-
-// Function to get the list of artists
-export const getArtists = async (): Promise<Artist[]> => {
-  try {
-    const response = await fetch("/api/artists", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch artists");
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error fetching artists:", error);
-    return [];
-  }
+export const getArtists = async (page: number) => {
+  // Make an API call to fetch paginated artists
+  const response = await fetch(`/api/artists?page=${page}`);
+  return await response.json();
 };
 
-// Function to create a new artist
-export const createArtist = async (artist: Artist): Promise<void> => {
-  try {
-    const response = await fetch("/api/artists", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(artist),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to create artist");
-    }
-  } catch (error) {
-    console.error("Error creating artist:", error);
-  }
+export const createArtist = async (artistData) => {
+  // API call to create a new artist
+  const response = await fetch(`/api/artists`, {
+    method: "POST",
+    body: JSON.stringify(artistData),
+  });
+  return await response.json();
 };
 
-// Function to update an existing artist
-export const updateArtist = async (
-  id: number,
-  artist: Artist
-): Promise<void> => {
-  try {
-    const response = await fetch(`/api/artists/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(artist),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to update artist");
-    }
-  } catch (error) {
-    console.error("Error updating artist:", error);
-  }
+export const updateArtist = async (artistId, updatedData) => {
+  // API call to update an artist
+  const response = await fetch(`/api/artists/${artistId}`, {
+    method: "PUT",
+    body: JSON.stringify(updatedData),
+  });
+  return await response.json();
 };
 
-// Function to delete an artist
-export const deleteArtist = async (id: number): Promise<void> => {
-  try {
-    const response = await fetch(`/api/artists/${id}`, {
-      method: "DELETE",
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to delete artist");
-    }
-  } catch (error) {
-    console.error("Error deleting artist:", error);
-  }
+export const deleteArtist = async (artistId) => {
+  // API call to delete an artist
+  const response = await fetch(`/api/artists/${artistId}`, {
+    method: "DELETE",
+  });
+  return await response.json();
 };
 
-// Function to import artists via CSV
-export const importCSV = async (file: File): Promise<void> => {
-  try {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const response = await fetch("/api/artists/import-csv", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to import CSV");
-    }
-  } catch (error) {
-    console.error("Error importing CSV:", error);
-  }
+export const importCSV = async (file) => {
+  // API call to import CSV
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await fetch(`/api/artists/import`, {
+    method: "POST",
+    body: formData,
+  });
+  return await response.json();
 };
 
-// Function to export artists to CSV
-export const exportCSV = async (): Promise<void> => {
-  try {
-    const response = await fetch("/api/artists/export-csv", {
-      method: "GET",
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to export CSV");
-    }
-
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", "artists.csv");
-    document.body.appendChild(link);
-    link.click();
-  } catch (error) {
-    console.error("Error exporting CSV:", error);
-  }
+export const exportCSV = async () => {
+  // API call to export artists as CSV
+  const response = await fetch(`/api/artists/export`);
+  return await response.json();
 };
