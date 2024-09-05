@@ -10,7 +10,6 @@ export async function GET(req: NextRequest, res: NextResponse) {
 
   try {
     const users = await db.collection("users").find().toArray();
-    console.log("line 51", users);
     return NextResponse.json({ data: users }, { status: 200 });
   } catch (error) {
     return NextResponse.json(

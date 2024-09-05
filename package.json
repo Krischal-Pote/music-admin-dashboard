@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "antd": "^5.20.4",
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",

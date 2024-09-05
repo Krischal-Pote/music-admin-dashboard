@@ -34,7 +34,6 @@ export const comparePassword = async (
   return await bcrypt.compare(password, hashedPassword);
 };
 export const getCurrentUser = (): DecodedToken | null => {
-  console.log(typeof window);
   if (typeof window !== "undefined") {
     const token = localStorage?.getItem("accessToken");
     if (!token) return null;
