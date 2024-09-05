@@ -1,41 +1,52 @@
-import { NextRequest, NextResponse } from "next/server";
-import { NextApiRequest, NextApiResponse } from "next";
+import { NextResponse } from "next/server";
 import clientPromise from "../../../lib/mongo";
-import { compare } from "bcryptjs";
-// import { ObjectId } from "mongodb";
+import { hash } from "bcryptjs";
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const { email, password } = await req.json();
-    if (!email || !password) {
-      return new NextResponse("Email and password are required", {
-        status: 400,
-      });
-    }
-
     const client = await clientPromise;
     const db = client.db("music");
+    const body = await req.json();
 
-    const user = await db.collection("users").findOne({ email });
+    const { first_name, email, password, phone, dob, gender, role, address } =
+      body;
 
-    if (!user) {
-      return new NextResponse("User not found", { status: 404 });
+    if (!first_name || !email || !password) {
+      return NextResponse.json(
+        { error: "First name, email, and password are required" },
+        { status: 400 }
+      );
     }
 
-    const isPasswordCorrect = await compare(password, user.password);
+    const hashedPassword = await hash(password, 10);
 
-    if (!isPasswordCorrect) {
-      return new NextResponse("Invalid credentials", { status: 401 });
-    }
+    // Create the user document
+    const newUser = {
+      first_name,
+      email,
+      password: hashedPassword, // Store hashed password
+      ...(phone && { phone }),
+      ...(dob && { dob: new Date(dob) }),
+      ...(gender && { gender }),
+      ...(role && { role }),
+      ...(address && { address }),
+    };
 
-    // Optionally, you can remove sensitive data before returning the user
-    const { password: userPassword, ...userWithoutPassword } = user;
+    // Insert into the database
+    const result = await db.collection("users").insertOne(newUser);
 
-    return NextResponse.json(userWithoutPassword);
+    // Respond with the created user (without returning the password)
+    const { password: userPassword, ...userWithoutPassword } = newUser;
+
+    return NextResponse.json(
+      { message: "User created successfully", user: userWithoutPassword },
+      { status: 201 }
+    );
   } catch (error) {
-    console.error("Error during login:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    console.error("Error creating user:", error);
+    return NextResponse.json(
+      { error: "Failed to create user" },
+      { status: 500 }
+    );
   }
 }
-
-// User management handler
