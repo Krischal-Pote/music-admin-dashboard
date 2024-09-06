@@ -5,12 +5,19 @@ export const getArtists = async (page: number) => {
 };
 
 export const createArtist = async (artistData) => {
-  // API call to create a new artist
   const response = await fetch(`/api/artists`, {
     method: "POST",
-    body: JSON.stringify(artistData),
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(artistData), // Send all form data
   });
-  return await response.json();
+
+  if (!response.ok) {
+    throw new Error("Failed to create artist");
+  }
+
+  return await response.json(); // Return the parsed JSON response
 };
 
 export const updateArtist = async (artistId, updatedData) => {

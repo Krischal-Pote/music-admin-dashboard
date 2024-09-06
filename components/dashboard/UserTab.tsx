@@ -289,7 +289,7 @@ const UserTab: React.FC = () => {
         >
           <Option value="super_admin">Admin</Option>
           <Option value="artist">Artist</Option>
-          <Option value="artist_manger">Artist Manager</Option>
+          <Option value="artist_manager">Artist Manager</Option>
         </Select>
         <Input
           placeholder="Address"
@@ -386,7 +386,7 @@ const UserTab: React.FC = () => {
         >
           <Option value="super_admin">Admin</Option>
           <Option value="artist">Artist </Option>
-          <Option value="artist_manger">Artist Manager</Option>
+          <Option value="artist_manager">Artist Manager</Option>
         </Select>
         <Input
           placeholder="Address"

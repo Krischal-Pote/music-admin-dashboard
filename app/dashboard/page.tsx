@@ -48,14 +48,12 @@ const DashboardPage: React.FC = () => {
 
     if (
       activeTab === "music" &&
-      (userRole === "super_admin" ||
-        userRole === "artist_manager" ||
-        userRole === "artist")
+      (userRole === "artist_manager" || userRole === "artist")
     ) {
       return <MusicTab userRole={userRole} />;
     }
 
-    return null; // Default return if no conditions are met
+    return null;
   };
 
   if (!userRole) {
@@ -88,9 +86,7 @@ const DashboardPage: React.FC = () => {
                 Artist Management
               </button>
             )}
-            {(userRole === "super_admin" ||
-              userRole === "artist_manager" ||
-              userRole === "artist") && (
+            {(userRole === "artist_manager" || userRole === "artist") && (
               <button
                 className={`px-4 py-2 text-white ${
                   activeTab === "music" ? "bg-blue-500" : "bg-gray-500"
