@@ -1,9 +1,14 @@
 import React, { useState } from "react";
 import { Modal, Button } from "antd";
 import ArtistForm from "./ArtistForm";
-import { createArtist } from "../../utils/artist"; // Import your createArtist function
+import { createArtist, updateArtist } from "../../utils/artist";
 
-const ArtistModal: React.FC = () => {
+interface ArtistModalProps {
+  artist?: any;
+  onUpdate: () => void;
+}
+
+const ArtistModal: React.FC<ArtistModalProps> = ({ artist, onUpdate }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const showModal = () => {
@@ -16,26 +21,36 @@ const ArtistModal: React.FC = () => {
 
   const handleSubmit = async (artistData: any) => {
     try {
-      await createArtist(artistData); // Call the createArtist function
-      setIsModalOpen(false); // Close modal after submission
-      console.log("Artist created successfully:", artistData);
+      if (artist) {
+        await updateArtist(artist._id, artistData);
+      } else {
+        await createArtist(artistData);
+      }
+      setIsModalOpen(false);
+      onUpdate();
     } catch (error) {
-      console.error("Error creating artist:", error);
+      console.error("Error handling artist:", error);
     }
   };
+
+  React.useEffect(() => {
+    if (artist) {
+      showModal();
+    }
+  }, [artist]);
 
   return (
     <>
       <Button type="primary" onClick={showModal}>
-        Add Artist
+        {artist ? "Edit Artist" : "Add Artist"}
       </Button>
       <Modal
-        title="Add New Artist"
+        title={artist ? "Edit Artist" : "Add New Artist"}
         open={isModalOpen}
         onCancel={handleCancel}
-        footer={null} // Remove the default footer with "OK" and "Cancel" buttons
+        footer={null}
       >
-        <ArtistForm onSubmit={handleSubmit} />
+        <ArtistForm onSubmit={handleSubmit} initialValues={artist} />
       </Modal>
     </>
   );

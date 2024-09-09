@@ -1,21 +1,36 @@
 import { NextResponse } from "next/server";
-import { parse } from "json2csv"; // You can install this package using `npm install json2csv`
+import { parse } from "json2csv";
+import clientPromise from "../../../../lib/mongo";
 
 export async function GET() {
-  // Simulated artist data, replace with your database query
-  const artists = [
-    { id: 1, name: "Artist 1", genre: "Pop" },
-    { id: 2, name: "Artist 2", genre: "Rock" },
-    // Add more fields as needed
+  const client = await clientPromise;
+  const db = client.db("music");
+
+  const artists = await db.collection("artists").find({}).toArray();
+
+  const fields = [
+    "_id",
+    "name",
+    "dob",
+    "gender",
+    "address",
+    "first_release_year",
+    "no_of_albums_released",
   ];
 
-  // Define the fields for the CSV file
-  const fields = ["id", "name", "genre"];
+  const csv = parse(
+    artists.map((artist) => ({
+      _id: artist._id.toString(),
+      name: artist.name,
+      dob: artist.dob ? new Date(artist.dob).toLocaleDateString() : "",
+      gender: artist.gender,
+      address: artist.address || "",
+      first_release_year: artist.first_release_year || "",
+      no_of_albums_released: artist.no_of_albums_released || "",
+    })),
+    { fields }
+  );
 
-  // Convert JSON to CSV
-  const csv = parse(artists, { fields });
-
-  // Return the CSV as a downloadable file
   return new Response(csv, {
     headers: {
       "Content-Type": "text/csv",

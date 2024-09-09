@@ -1,6 +1,6 @@
-"use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Modal, Button } from "antd"; // Import Ant Design components
 import {
   getArtists,
   createArtist,
@@ -12,12 +12,14 @@ import {
 import ArtistForm from "./ArtistForm";
 import Pagination from "../dashboard/Pagination";
 import ArtistModal from "./ArtistModal";
+import Papa from "papaparse";
 
 const ArtistTab: React.FC = () => {
-  const [artists, setArtists] = useState([]);
+  const [artists, setArtists] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [selectedArtist, setSelectedArtist] = useState<any>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -27,25 +29,58 @@ const ArtistTab: React.FC = () => {
   const fetchArtists = async (page: number) => {
     setLoading(true);
     const data = await getArtists(page);
-    console.log("data", data);
     setArtists(data.artists);
     setTotalPages(data.totalPages);
     setLoading(false);
+  };
+
+  const handleEditArtist = (artist: any) => {
+    setSelectedArtist(artist);
   };
 
   const handleUpdateArtist = async (artistId, updatedData) => {
     await updateArtist(artistId, updatedData);
     fetchArtists(currentPage); // Refresh artist list
   };
-
-  const handleDeleteArtist = async (artistId) => {
-    await deleteArtist(artistId);
-    fetchArtists(currentPage); // Refresh artist list
+  const handleDeleteArtist = (artistId) => {
+    Modal.confirm({
+      title: "Are you sure you want to delete this artist?",
+      okText: "Yes",
+      okType: "danger",
+      cancelText: "No",
+      onOk: async () => {
+        await deleteArtist(artistId);
+        fetchArtists(currentPage); // Refresh artist list
+      },
+      onCancel() {
+        // Optional: Handle cancel action
+      },
+    });
   };
 
-  const handleCSVImport = async (file) => {
-    await importCSV(file);
-    fetchArtists(currentPage); // Refresh artist list
+  const handleCSVImport = async (file: File) => {
+    console.log("file", file);
+    Papa.parse(file, {
+      header: true, // If your CSV has headers
+      skipEmptyLines: true, // Skip empty lines
+      complete: async (result) => {
+        const importedArtists = result.data;
+
+        console.log("imported artist", importedArtists);
+
+        // Optionally, call your API to save the imported artists to the backend
+        await importCSV(importedArtists);
+
+        // Set the imported data to the artists state to populate the table
+        setArtists(importedArtists);
+
+        // Optionally refresh the artists from the server if you store them there
+        fetchArtists(currentPage);
+      },
+      error: (error) => {
+        console.error("Error parsing CSV:", error);
+      },
+    });
   };
 
   const handleCSVExport = async () => {
@@ -67,24 +102,24 @@ const ArtistTab: React.FC = () => {
       <h2 className="text-2xl font-bold mb-4">Artist Management</h2>
 
       {/* Create Artist */}
-      <ArtistModal />
+      <ArtistModal
+        artist={selectedArtist}
+        onUpdate={() => fetchArtists(currentPage)}
+      />
 
       {/* CSV Import/Export */}
       <div className="my-4 flex justify-between">
         <div>
-          Import the artists data form a CSV file<br></br>
+          Import the artists data from a CSV file<br></br>
           <input
             type="file"
             onChange={(e) => handleCSVImport(e.target.files[0])}
           />
         </div>
         <div>
-          <button
-            className="mr-4 px-4 py-2 bg-blue-500 text-white"
-            onClick={handleCSVExport}
-          >
+          <Button className="mr-4" type="primary" onClick={handleCSVExport}>
             Export Artists CSV
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -135,28 +170,20 @@ const ArtistTab: React.FC = () => {
                         {artist.no_of_albums_released || "N/A"}
                       </td>
                       <td className="border px-4 py-2">
-                        <button
-                          className="mr-2 px-4 py-2 bg-blue-500 text-white"
-                          onClick={() =>
-                            router.push(
-                              `/dashboard/artists/${artist._id}/songs`
-                            )
-                          }
-                        >
-                          View Songs
-                        </button>
-                        <button
-                          className="mr-2 px-4 py-2 bg-green-500 text-white"
-                          onClick={() => handleUpdateArtist(artist._id, artist)}
+                        <Button
+                          className="mr-2"
+                          type="default"
+                          onClick={() => handleEditArtist(artist)}
                         >
                           Edit
-                        </button>
-                        <button
-                          className="px-4 py-2 bg-red-500 text-white"
+                        </Button>
+                        <Button
+                          type="primary"
+                          danger
                           onClick={() => handleDeleteArtist(artist._id)}
                         >
                           Delete
-                        </button>
+                        </Button>
                       </td>
                     </tr>
                   ))}

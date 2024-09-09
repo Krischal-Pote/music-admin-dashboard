@@ -11,11 +11,13 @@
   "dependencies": {
     "antd": "^5.20.4",
     "bcryptjs": "^2.4.3",
+    "csv-parser": "^3.0.0",
     "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
     "moment": "^2.30.1",
     "next": "14.2.7",
+    "papaparse": "^5.4.1",
     "react": "^18",
     "react-dom": "^18"
   },
@@ -24,6 +26,7 @@
     "@types/jsonwebtoken": "^9.0.6",
     "@types/mongoose": "^5.11.97",
     "@types/node": "^20",
+    "@types/papaparse": "^5.3.14",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",

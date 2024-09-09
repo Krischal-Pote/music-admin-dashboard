@@ -5,47 +5,81 @@ export const getArtists = async (page: number) => {
 };
 
 export const createArtist = async (artistData) => {
-  const response = await fetch(`/api/artists`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(artistData), // Send all form data
-  });
+  try {
+    const response = await fetch(`/api/artists`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(artistData),
+    });
 
-  if (!response.ok) {
-    throw new Error("Failed to create artist");
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to create artist");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error creating artist:", error);
+    throw error;
   }
-
-  return await response.json(); // Return the parsed JSON response
 };
 
 export const updateArtist = async (artistId, updatedData) => {
-  // API call to update an artist
-  const response = await fetch(`/api/artists/${artistId}`, {
-    method: "PUT",
-    body: JSON.stringify(updatedData),
-  });
-  return await response.json();
+  console.log("updateID", artistId);
+  try {
+    const response = await fetch(`/api/artists/${artistId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updatedData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to update artist");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating artist:", error);
+    throw error;
+  }
 };
 
 export const deleteArtist = async (artistId) => {
   // API call to delete an artist
+  console.log("delete artist", artistId);
   const response = await fetch(`/api/artists/${artistId}`, {
     method: "DELETE",
   });
   return await response.json();
 };
 
-export const importCSV = async (file) => {
-  // API call to import CSV
-  const formData = new FormData();
-  formData.append("file", file);
-  const response = await fetch(`/api/artists/import`, {
-    method: "POST",
-    body: formData,
-  });
-  return await response.json();
+export const importCSV = async (artistsData: any[]) => {
+  try {
+    const response = await fetch("/api/artists/import", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ artists: artistsData }),
+    });
+
+    console.log("response", response);
+
+    if (!response.ok) {
+      throw Error("Failed to import artists");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error importing artists:", error);
+    throw error;
+  }
 };
 
 export const exportCSV = async () => {

@@ -31,22 +31,21 @@ export async function GET(request: Request) {
   }
 }
 export async function POST(request: Request) {
-  const artistData = await request.json();
-
-  // Validate required fields
-  if (!artistData.name) {
-    return NextResponse.json(
-      { success: false, message: "Name is required" },
-      { status: 400 }
-    );
-  }
-
-  const client = await clientPromise;
-  const db = client.db("music");
-
   try {
-    // Insert the new artist into the database
-    const result = await db.collection("artists").insertOne({
+    const artistData = await request.json();
+
+    // Validate required fields
+    if (!artistData.name) {
+      return NextResponse.json(
+        { success: false, message: "Name is required" },
+        { status: 400 }
+      );
+    }
+
+    const client = await clientPromise;
+    const db = client.db("music");
+
+    const artist = {
       name: artistData.name,
       dob: artistData.dob,
       gender: artistData.gender,
@@ -55,87 +54,26 @@ export async function POST(request: Request) {
       no_of_albums_released: artistData.no_of_albums_released,
       created_at: new Date(),
       updated_at: new Date(),
+    };
+
+    // Insert the new artist into the database
+    await db.collection("artists").insertOne({
+      ...artist,
     });
 
+    // Return the newly created artist
     return NextResponse.json(
-      { success: true, artist: result.ops[0] },
+      { success: true, artist: artist },
       { status: 201 }
     );
-  } catch (error) {
+  } catch (error: any) {
+    console.error("Error creating artist:", error); // Log the error for debugging
     return NextResponse.json(
-      { success: false, message: "Failed to create artist" },
-      { status: 500 }
-    );
-  }
-}
-export async function PUT(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const artistId = searchParams.get("id");
-  const updatedData = await request.json();
-
-  if (!ObjectId.isValid(artistId)) {
-    return NextResponse.json(
-      { success: false, message: "Invalid artist ID" },
-      { status: 400 }
-    );
-  }
-
-  const client = await clientPromise;
-  const db = client.db("music");
-
-  try {
-    const result = await db
-      .collection("artists")
-      .updateOne(
-        { _id: new ObjectId(artistId) },
-        { $set: { ...updatedData, updated_at: new Date() } }
-      );
-
-    if (result.modifiedCount === 0) {
-      return NextResponse.json(
-        { success: false, message: "No artist found to update" },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({ success: true, message: "Artist updated" });
-  } catch (error) {
-    return NextResponse.json(
-      { success: false, message: "Failed to update artist" },
-      { status: 500 }
-    );
-  }
-}
-export async function DELETE(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const artistId = searchParams.get("id");
-
-  if (!ObjectId.isValid(artistId)) {
-    return NextResponse.json(
-      { success: false, message: "Invalid artist ID" },
-      { status: 400 }
-    );
-  }
-
-  const client = await clientPromise;
-  const db = client.db("music");
-
-  try {
-    const result = await db
-      .collection("artists")
-      .deleteOne({ _id: new ObjectId(artistId) });
-
-    if (result.deletedCount === 0) {
-      return NextResponse.json(
-        { success: false, message: "No artist found to delete" },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({ success: true, message: "Artist deleted" });
-  } catch (error) {
-    return NextResponse.json(
-      { success: false, message: "Failed to delete artist" },
+      {
+        success: false,
+        message: "Failed to create artist",
+        error: error.message,
+      },
       { status: 500 }
     );
   }

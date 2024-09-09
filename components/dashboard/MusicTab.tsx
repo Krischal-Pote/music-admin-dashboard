@@ -1,7 +1,7 @@
-// File: app/components/dashboard/MusicTab.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { Modal, Button, Input, Select, Form } from "antd";
 import { useSearchParams } from "next/navigation";
 import {
   getSongsByArtist,
@@ -9,6 +9,7 @@ import {
   updateSong,
   deleteSong,
 } from "../../utils/songApi"; // API functions
+import { getArtists } from "@/utils/artist";
 
 interface Song {
   id: string;
@@ -29,33 +30,44 @@ const MusicTab: React.FC<MusicTabProps> = ({ userRole }) => {
     title: "",
     album_name: "",
     genre: "rnb",
+    artistId: "",
   });
   const [editingSong, setEditingSong] = useState<Song | null>(null);
   const searchParams = useSearchParams();
-  const artistId = searchParams.get("artistId"); // Get the artist ID from query params
+  const [loading, setLoading] = useState(true);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [artists, setArtists] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchSongs = async () => {
-      if (artistId) {
-        const data = await getSongsByArtist(artistId); // Fetch songs for the artist
-        setSongs(data);
-      }
+    const fetchArtists = async () => {
+      setLoading(true);
+      const data = await getArtists();
+      setArtists(data.artists);
+      setLoading(false);
     };
 
-    fetchSongs();
-  }, [artistId]);
-
+    fetchArtists();
+  }, []);
   const handleCreateSong = async () => {
-    if (userRole === "artist" && artistId) {
-      const newSongData = await createSong({ ...newSong, artistId });
-      setSongs([...songs, newSongData]);
-      setNewSong({ title: "", album_name: "", genre: "rnb" });
+    try {
+      if (newSong.artistId && newSong.title && newSong.genre) {
+        const newSongData = await createSong({ ...newSong });
+        setSongs([...songs, newSongData.song]);
+        setNewSong({ title: "", album_name: "", genre: "rnb", artistId: "" });
+        setIsModalVisible(false);
+      } else {
+        console.error(
+          "All fields, including artistId, are required to create a new song"
+        );
+      }
+    } catch (err) {
+      console.log("Error while creating song:", err);
     }
   };
 
   const handleUpdateSong = async (song: Song) => {
     if (userRole === "artist") {
-      const updatedSong = await updateSong(song.id, song); // Update the song
+      const updatedSong = await updateSong(song.id, song);
       setSongs(songs.map((s) => (s.id === song.id ? updatedSong : s)));
       setEditingSong(null);
     }
@@ -67,57 +79,81 @@ const MusicTab: React.FC<MusicTabProps> = ({ userRole }) => {
       setSongs(songs.filter((song) => song.id !== songId));
     }
   };
+  const showModal = () => {
+    setIsModalVisible(true);
+  };
 
+  const handleCancel = () => {
+    setNewSong({ title: "", album_name: "", genre: "rnb", artistId: "" });
+    setIsModalVisible(false);
+  };
   return (
     <div>
       <h2 className="text-2xl font-bold mb-4">Music Management </h2>
-      {userRole === "artist" && (
-        <div className="mb-4">
-          <input
-            type="text"
-            value={newSong.title}
-            onChange={(e) => setNewSong({ ...newSong, title: e.target.value })}
-            placeholder="Song Title"
-            className="px-4 py-2 border"
-          />
-          <input
-            type="text"
-            value={newSong.album_name || ""}
-            onChange={(e) =>
-              setNewSong({ ...newSong, album_name: e.target.value })
-            }
-            placeholder="Album Name (Optional)"
-            className="ml-2 px-4 py-2 border"
-          />
-          <select
-            value={newSong.genre}
-            onChange={(e) =>
-              setNewSong({
-                ...newSong,
-                genre: e.target.value as
-                  | "rnb"
-                  | "country"
-                  | "classic"
-                  | "rock"
-                  | "jazz",
-              })
-            }
-            className="ml-2 px-4 py-2 border"
-          >
-            <option value="rnb">RNB</option>
-            <option value="country">Country</option>
-            <option value="classic">Classic</option>
-            <option value="rock">Rock</option>
-            <option value="jazz">Jazz</option>
-          </select>
-          <button
-            onClick={handleCreateSong}
-            className="ml-2 px-4 py-2 bg-blue-500 text-white"
-          >
-            Create Song
-          </button>
-        </div>
-      )}
+
+      <Button type="primary" onClick={showModal}>
+        Create New Song
+      </Button>
+
+      <Modal
+        title="Create New Song"
+        visible={isModalVisible}
+        onOk={handleCreateSong}
+        onCancel={handleCancel}
+        okText="Create"
+        cancelText="Cancel"
+      >
+        <Form layout="vertical">
+          <Form.Item label="Artist Name">
+            <Select
+              value={newSong.artistId} // Bind selected artistId to state
+              onChange={(value) => setNewSong({ ...newSong, artistId: value })}
+              placeholder="Select Artist"
+            >
+              {artists.map((artist) => (
+                <Option key={artist._id} value={artist._id}>
+                  {artist.name}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item label="Song Title">
+            <Input
+              value={newSong.title}
+              onChange={(e) =>
+                setNewSong({ ...newSong, title: e.target.value })
+              }
+              placeholder="Song Title"
+            />
+          </Form.Item>
+
+          <Form.Item label="Album Name (Optional)">
+            <Input
+              value={newSong.album_name}
+              onChange={(e) =>
+                setNewSong({ ...newSong, album_name: e.target.value })
+              }
+              placeholder="Album Name (Optional)"
+            />
+          </Form.Item>
+
+          <Form.Item label="Genre">
+            <Select
+              value={newSong.genre}
+              onChange={(value) =>
+                setNewSong({ ...newSong, genre: value as Song["genre"] })
+              }
+            >
+              <Option value="rnb">RNB</Option>
+              <Option value="country">Country</Option>
+              <Option value="classic">Classic</Option>
+              <Option value="rock">Rock</Option>
+              <Option value="jazz">Jazz</Option>
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
+
       <ul className="mt-4">
         {songs.map((song) => (
           <li key={song.id} className="p-4 border-b">
