@@ -27,7 +27,6 @@ export const createArtist = async (artistData) => {
 };
 
 export const updateArtist = async (artistId, updatedData) => {
-  console.log("updateID", artistId);
   try {
     const response = await fetch(`/api/artists/${artistId}`, {
       method: "PUT",
@@ -51,7 +50,6 @@ export const updateArtist = async (artistId, updatedData) => {
 
 export const deleteArtist = async (artistId) => {
   // API call to delete an artist
-  console.log("delete artist", artistId);
   const response = await fetch(`/api/artists/${artistId}`, {
     method: "DELETE",
   });
@@ -67,8 +65,6 @@ export const importCSV = async (artistsData: any[]) => {
       },
       body: JSON.stringify({ artists: artistsData }),
     });
-
-    console.log("response", response);
 
     if (!response.ok) {
       throw Error("Failed to import artists");

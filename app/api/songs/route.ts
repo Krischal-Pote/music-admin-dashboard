@@ -2,11 +2,16 @@ import { NextResponse } from "next/server";
 import clientPromise from "../../../lib/mongo";
 import { ObjectId } from "mongodb";
 
-export async function GET(
-  request: Request,
-  { params }: { params: { artistId: string } }
-) {
-  const { artistId } = params;
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const artistId = url.searchParams.get("artistId");
+
+  if (!artistId) {
+    return NextResponse.json(
+      { success: false, message: "No artistId provided" },
+      { status: 400 }
+    );
+  }
 
   const client = await clientPromise;
   const db = client.db("music");
@@ -29,24 +34,24 @@ export async function POST(
   request: Request,
   { params }: { params: { artistId: string } }
 ) {
-  const { artistId } = params;
-  const songData = await request.json();
-
-  if (!songData.title || !songData.genre) {
-    return NextResponse.json(
-      { success: false, message: "Title and genre are required" },
-      { status: 400 }
-    );
-  }
-
-  const client = await clientPromise;
-  const db = client.db("music");
-
   try {
+    const songData = await request.json();
+
+    if (!songData.title || !songData.genre || !songData.artistId) {
+      return NextResponse.json(
+        { success: false, message: "Title, genre, and artistId are required" },
+        { status: 400 }
+      );
+    }
+
+    const client = await clientPromise;
+    const db = client.db("music");
+
     const newSong = {
-      artistId: new ObjectId(artistId),
+      artistId: new ObjectId(songData.artistId), // Ensure artistId is correctly processed
       title: songData.title,
       album_name: songData.album_name || null,
+      genre: songData.genre,
       created_at: new Date(),
       updated_at: new Date(),
     };
@@ -59,6 +64,7 @@ export async function POST(
 
     return NextResponse.json({ success: true, song: newSong }, { status: 201 });
   } catch (error) {
+    console.error("Error creating song:", error); // Log the server error
     return NextResponse.json(
       {
         success: false,

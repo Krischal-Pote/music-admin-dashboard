@@ -2,11 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { getSongsForArtist } from "../../../../../utils/songApi"; // API for fetching songs
+// import { getSongsForArtist } from "../../../../../utils/songApi";
 
 const ArtistSongs: React.FC = () => {
   const router = useRouter();
-  const { id } = router.query; // Get artist ID from route
+  // const { id } = router.query;
   const [songs, setSongs] = useState([]);
 
   useEffect(() => {

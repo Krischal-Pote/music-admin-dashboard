@@ -1,17 +1,17 @@
-// Fetch songs for a specific artist
 export const getSongsForArtist = async (artistId: string) => {
-  const response = await fetch(`  `);
-  if (!response.ok) {
-    throw new Error("Failed to fetch songs");
+  try {
+    const response = await fetch(`/api/songs?artistId=${artistId}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch songs");
+    }
+    return await response.json();
+  } catch (err) {
+    console.log("err", err);
   }
-  return await response.json();
 };
 
-// Create a new song for an artist// Create a new song for an artist
 export const createSong = async (songData: any) => {
   try {
-    console.log("Creating song with data:", songData);
-
     const response = await fetch(`/api/songs`, {
       method: "POST",
       headers: {
@@ -21,7 +21,7 @@ export const createSong = async (songData: any) => {
         title: songData.title,
         album_name: songData.album_name,
         genre: songData.genre,
-        artistId: songData.artistId, // Make sure to include artistId
+        artistId: songData.artistId,
       }),
     });
 
@@ -32,7 +32,6 @@ export const createSong = async (songData: any) => {
     }
 
     const responseData = await response.json();
-    console.log("Song created successfully:", responseData);
 
     return responseData;
   } catch (error) {
@@ -41,36 +40,45 @@ export const createSong = async (songData: any) => {
   }
 };
 
-// Update a song for an artist
-export const updateSong = async (
-  artistId: string,
-  songId: string,
-  songData: any
-) => {
-  const response = await fetch(`/api/songs`, {
+export const updateSong = async (songId: string, songData: any) => {
+  const response = await fetch(`/api/songs/${songId}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(songData),
   });
+
   if (!response.ok) {
     throw new Error("Failed to update song");
   }
   return await response.json();
 };
 
-// Delete a song for an artist
-export const deleteSong = async (artistId: string, songId: string) => {
-  const response = await fetch(`/api/artists/${artistId}/songs/${songId}`, {
+export const deleteSong = async (songId: string) => {
+  const response = await fetch(`/api/songs/${songId}`, {
     method: "DELETE",
   });
+
   if (!response.ok) {
     throw new Error("Failed to delete song");
   }
-  return await response.json();
+
+  const data = await response.json();
+
+  if (data.success) {
+    return true;
+  } else {
+    throw new Error("Failed to delete song");
+  }
 };
-export const getSongsByArtist = async (artistId: string) => {
-  const response = await fetch(`/api/artists/?artistId=${artistId}`);
-  return response.json();
+
+export const getAllSongs = async () => {
+  const response = await fetch(`/api/songs/all`, {
+    method: "GET", // Explicitly specify the method
+  });
+  if (!response.ok) {
+    throw new Error("Failed to fetch songs");
+  }
+  return await response.json();
 };

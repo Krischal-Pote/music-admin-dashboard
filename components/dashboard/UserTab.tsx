@@ -226,7 +226,7 @@ const UserTab: React.FC = () => {
       {/* Create User Modal */}
       <Modal
         title="Create User"
-        visible={isCreateModalVisible}
+        open={isCreateModalVisible}
         onOk={handleCreateModalOk}
         onCancel={handleCancel}
       >
@@ -301,7 +301,7 @@ const UserTab: React.FC = () => {
       {/* Edit User Modal */}
       <Modal
         title="Edit User"
-        visible={isEditModalVisible}
+        open={isEditModalVisible}
         onOk={handleEditModalOk}
         onCancel={handleCancel}
       >
@@ -403,7 +403,7 @@ const UserTab: React.FC = () => {
       {/* Delete User Confirmation Modal */}
       <Modal
         title="Delete User"
-        visible={isDeleteModalVisible}
+        open={isDeleteModalVisible}
         onOk={handleDeleteUser}
         onCancel={handleCancelDelete}
         okText="Delete"

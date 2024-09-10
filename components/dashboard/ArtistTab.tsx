@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Modal, Button } from "antd"; // Import Ant Design components
+import { Modal, Button } from "antd";
 import {
   getArtists,
   createArtist,
@@ -13,6 +13,7 @@ import ArtistForm from "./ArtistForm";
 import Pagination from "../dashboard/Pagination";
 import ArtistModal from "./ArtistModal";
 import Papa from "papaparse";
+import { getCurrentUser } from "@/utils/auth";
 
 const ArtistTab: React.FC = () => {
   const [artists, setArtists] = useState<any[]>([]);
@@ -21,6 +22,7 @@ const ArtistTab: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedArtist, setSelectedArtist] = useState<any>(null);
   const router = useRouter();
+  const user = getCurrentUser();
 
   useEffect(() => {
     fetchArtists(currentPage);
@@ -50,31 +52,23 @@ const ArtistTab: React.FC = () => {
       cancelText: "No",
       onOk: async () => {
         await deleteArtist(artistId);
-        fetchArtists(currentPage); // Refresh artist list
+        fetchArtists(currentPage);
       },
-      onCancel() {
-        // Optional: Handle cancel action
-      },
+      onCancel() {},
     });
   };
 
   const handleCSVImport = async (file: File) => {
-    console.log("file", file);
     Papa.parse(file, {
-      header: true, // If your CSV has headers
-      skipEmptyLines: true, // Skip empty lines
+      header: true,
+      skipEmptyLines: true,
       complete: async (result) => {
         const importedArtists = result.data;
 
-        console.log("imported artist", importedArtists);
-
-        // Optionally, call your API to save the imported artists to the backend
         await importCSV(importedArtists);
 
-        // Set the imported data to the artists state to populate the table
         setArtists(importedArtists);
 
-        // Optionally refresh the artists from the server if you store them there
         fetchArtists(currentPage);
       },
       error: (error) => {
@@ -94,7 +88,7 @@ const ArtistTab: React.FC = () => {
     a.download = "artists.csv"; // Name of the file
     document.body.appendChild(a);
     a.click();
-    a.remove(); // Clean up
+    a.remove();
   };
 
   return (
@@ -102,26 +96,30 @@ const ArtistTab: React.FC = () => {
       <h2 className="text-2xl font-bold mb-4">Artist Management</h2>
 
       {/* Create Artist */}
-      <ArtistModal
-        artist={selectedArtist}
-        onUpdate={() => fetchArtists(currentPage)}
-      />
-
-      {/* CSV Import/Export */}
-      <div className="my-4 flex justify-between">
-        <div>
-          Import the artists data from a CSV file<br></br>
-          <input
-            type="file"
-            onChange={(e) => handleCSVImport(e.target.files[0])}
+      {user?.role === "artist_manager" && (
+        <>
+          <ArtistModal
+            artist={selectedArtist}
+            onUpdate={() => fetchArtists(currentPage)}
           />
-        </div>
-        <div>
-          <Button className="mr-4" type="primary" onClick={handleCSVExport}>
-            Export Artists CSV
-          </Button>
-        </div>
-      </div>
+          <div className="my-4 flex justify-between">
+            <div>
+              Import the artists data from a CSV file
+              <br />
+              <input
+                type="file"
+                accept=".csv"
+                onChange={(e) => handleCSVImport(e.target.files?.[0])}
+              />
+            </div>
+            <div>
+              <Button className="mr-4" type="primary" onClick={handleCSVExport}>
+                Export Artists CSV
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Artist List */}
       {loading ? (
@@ -170,6 +168,17 @@ const ArtistTab: React.FC = () => {
                         {artist.no_of_albums_released || "N/A"}
                       </td>
                       <td className="border px-4 py-2">
+                        <Button
+                          className="mr-2"
+                          type="primary"
+                          onClick={() =>
+                            router.push(
+                              `/dashboard/songs?artistId=${artist._id}`
+                            )
+                          }
+                        >
+                          View Songs
+                        </Button>
                         <Button
                           className="mr-2"
                           type="default"

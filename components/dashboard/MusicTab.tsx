@@ -8,8 +8,12 @@ import {
   createSong,
   updateSong,
   deleteSong,
+  getSongsForArtist,
 } from "../../utils/songApi"; // API functions
 import { getArtists } from "@/utils/artist";
+import { getCurrentUser } from "@/utils/auth";
+
+const { Option } = Select;
 
 interface Song {
   id: string;
@@ -22,38 +26,61 @@ interface Song {
 
 interface MusicTabProps {
   userRole: string; // Expect userRole as a prop
+  artistId?: string; // Expect artistId as a prop or passed from parent
 }
 
 const MusicTab: React.FC<MusicTabProps> = ({ userRole }) => {
   const [songs, setSongs] = useState<Song[]>([]);
+  const user = getCurrentUser();
+  const artistId = user?.id;
+
   const [newSong, setNewSong] = useState({
     title: "",
     album_name: "",
     genre: "rnb",
-    artistId: "",
+    artistId: artistId,
   });
-  const [editingSong, setEditingSong] = useState<Song | null>(null);
-  const searchParams = useSearchParams();
+  const [editingSong, setEditingSong] = useState<{
+    id: string;
+    title: string;
+    album_name?: string;
+    genre: "rnb" | "country" | "classic" | "rock" | "jazz";
+  } | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [artists, setArtists] = useState<any[]>([]);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
 
   useEffect(() => {
-    const fetchArtists = async () => {
-      setLoading(true);
-      const data = await getArtists();
-      setArtists(data.artists);
-      setLoading(false);
-    };
+    fetchSongs();
+  }, [artistId]);
 
-    fetchArtists();
-  }, []);
+  const fetchSongs = async () => {
+    setLoading(true);
+    try {
+      if (artistId) {
+        const data = await getSongsForArtist(artistId);
+        setSongs(data.songs);
+      }
+    } catch (error) {
+      console.error("Error fetching songs:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCreateSong = async () => {
     try {
       if (newSong.artistId && newSong.title && newSong.genre) {
-        const newSongData = await createSong({ ...newSong });
-        setSongs([...songs, newSongData.song]);
-        setNewSong({ title: "", album_name: "", genre: "rnb", artistId: "" });
+        const newSongData = await createSong(newSong);
+        setSongs([...songs, newSongData.song]); // Add the new song to the state
+        setNewSong({
+          title: "",
+          album_name: "",
+          genre: "rnb",
+          artistId: artistId,
+        });
         setIsModalVisible(false);
       } else {
         console.error(
@@ -65,58 +92,69 @@ const MusicTab: React.FC<MusicTabProps> = ({ userRole }) => {
     }
   };
 
-  const handleUpdateSong = async (song: Song) => {
-    if (userRole === "artist") {
-      const updatedSong = await updateSong(song.id, song);
-      setSongs(songs.map((s) => (s.id === song.id ? updatedSong : s)));
-      setEditingSong(null);
+  const handleUpdateSong = async () => {
+    if (editingSong) {
+      try {
+        const updatedSong = await updateSong(editingSong._id, {
+          title: editingSong.title,
+          album_name: editingSong.album_name,
+          genre: editingSong.genre,
+        });
+        setSongs(
+          songs.map((s) => (s.id === editingSong.id ? updatedSong.updated : s))
+        );
+        setEditingSong(null); // Close the modal
+        setIsEditModalVisible(false); // Close the edit modal
+      } catch (error) {
+        console.error("Error updating song:", error);
+      }
     }
   };
 
-  const handleDeleteSong = async (songId: string) => {
-    if (userRole === "artist") {
-      await deleteSong(songId); // Only artist can delete songs
-      setSongs(songs.filter((song) => song.id !== songId));
-    }
-  };
-  const showModal = () => {
-    setIsModalVisible(true);
+  const handleDeleteSong = async (deleteSongId: string) => {
+    Modal.confirm({
+      title: "Are you sure you want to delete this song?",
+      okText: "Yes",
+      okType: "danger",
+      cancelText: "No",
+      onOk: async () => {
+        try {
+          await deleteSong(deleteSongId);
+          setSongs((prevSongs) =>
+            prevSongs.filter((song) => song._id !== deleteSongId)
+          );
+        } catch (error) {
+          console.error("Error while deleting song:", error);
+        }
+      },
+      onCancel() {
+        setIsDeleteModalVisible(false);
+      },
+    });
   };
 
   const handleCancel = () => {
     setNewSong({ title: "", album_name: "", genre: "rnb", artistId: "" });
     setIsModalVisible(false);
   };
+
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">Music Management </h2>
+      <h2 className="text-2xl font-bold mb-4">Music Management</h2>
 
-      <Button type="primary" onClick={showModal}>
+      <Button type="primary" onClick={() => setIsModalVisible(true)}>
         Create New Song
       </Button>
 
       <Modal
         title="Create New Song"
-        visible={isModalVisible}
+        open={isModalVisible}
         onOk={handleCreateSong}
         onCancel={handleCancel}
         okText="Create"
         cancelText="Cancel"
       >
         <Form layout="vertical">
-          <Form.Item label="Artist Name">
-            <Select
-              value={newSong.artistId} // Bind selected artistId to state
-              onChange={(value) => setNewSong({ ...newSong, artistId: value })}
-              placeholder="Select Artist"
-            >
-              {artists.map((artist) => (
-                <Option key={artist._id} value={artist._id}>
-                  {artist.name}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
           <Form.Item label="Song Title">
             <Input
               value={newSong.title}
@@ -153,91 +191,107 @@ const MusicTab: React.FC<MusicTabProps> = ({ userRole }) => {
           </Form.Item>
         </Form>
       </Modal>
+      {loading ? (
+        <p>Loading...</p>
+      ) : (
+        <table className="table-auto w-full mt-4">
+          <thead>
+            <tr>
+              <th className="px-4 py-2">Title</th>
+              <th className="px-4 py-2">Album</th>
+              <th className="px-4 py-2">Genre</th>
+              {(userRole === "artist" || userRole === "artist_manager") && (
+                <th className="px-4 py-2">Actions</th>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {songs.map((song, idx) => (
+              <tr key={idx} className="border-b">
+                <td className="border px-4 py-2">{song.title}</td>
+                <td className="border px-4 py-2">{song.album_name}</td>
+                <td className="border px-4 py-2">{song.genre}</td>
+                {(userRole === "artist" || userRole === "artist_manager") && (
+                  <td className="border px-4 py-2">
+                    <Button
+                      className="mt-2 mr-2"
+                      type="primary"
+                      onClick={() => {
+                        setEditingSong(song); // Set the current song in the editing state
+                        setIsEditModalVisible(true); // Open the edit modal
+                      }}
+                    >
+                      Edit
+                    </Button>
 
-      <ul className="mt-4">
-        {songs.map((song) => (
-          <li key={song.id} className="p-4 border-b">
-            <p>Title: {song.title}</p>
-            <p>Album: {song.album_name || "N/A"}</p>
-            <p>Genre: {song.genre}</p>
-            <p>Created At: {new Date(song.created_at).toLocaleDateString()}</p>
-            <p>Updated At: {new Date(song.updated_at).toLocaleDateString()}</p>
-
-            {userRole === "artist" && (
-              <>
-                <button
-                  className="mt-2 px-4 py-2 bg-yellow-500 text-white"
-                  onClick={() => setEditingSong(song)}
-                >
-                  Edit
-                </button>
-                <button
-                  className="mt-2 px-4 py-2 bg-red-500 text-white"
-                  onClick={() => handleDeleteSong(song.id)}
-                >
-                  Delete
-                </button>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
-      {editingSong && (
-        <div className="mt-4">
-          <h3 className="text-xl font-bold">Edit Song</h3>
-          <input
-            type="text"
-            value={editingSong.title}
-            onChange={(e) =>
-              setEditingSong({ ...editingSong, title: e.target.value })
-            }
-            placeholder="Song Title"
-            className="px-4 py-2 border"
-          />
-          <input
-            type="text"
-            value={editingSong.album_name || ""}
-            onChange={(e) =>
-              setEditingSong({ ...editingSong, album_name: e.target.value })
-            }
-            placeholder="Album Name (Optional)"
-            className="ml-2 px-4 py-2 border"
-          />
-          <select
-            value={editingSong.genre}
-            onChange={(e) =>
-              setEditingSong({
-                ...editingSong,
-                genre: e.target.value as
-                  | "rnb"
-                  | "country"
-                  | "classic"
-                  | "rock"
-                  | "jazz",
-              })
-            }
-            className="ml-2 px-4 py-2 border"
-          >
-            <option value="rnb">RNB</option>
-            <option value="country">Country</option>
-            <option value="classic">Classic</option>
-            <option value="rock">Rock</option>
-            <option value="jazz">Jazz</option>
-          </select>
-          <button
-            onClick={() => handleUpdateSong(editingSong)}
-            className="ml-2 px-4 py-2 bg-green-500 text-white"
-          >
-            Update Song
-          </button>
-          <button
-            onClick={() => setEditingSong(null)}
-            className="ml-2 px-4 py-2 bg-gray-500 text-white"
-          >
-            Cancel
-          </button>
-        </div>
+                    <Button
+                      className="mt-2"
+                      danger
+                      onClick={() => handleDeleteSong(song._id)}
+                    >
+                      Delete
+                    </Button>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
+
+      <Modal
+        title="Edit Song"
+        open={isEditModalVisible}
+        onOk={handleUpdateSong} // Handle the update when clicking OK
+        onCancel={() => setIsEditModalVisible(false)} // Close the modal on cancel
+        okText="Update"
+        cancelText="Cancel"
+      >
+        <Form layout="vertical">
+          <Form.Item label="Song Title">
+            <Input
+              value={editingSong?.title}
+              onChange={(e) =>
+                setEditingSong({ ...editingSong, title: e.target.value })
+              }
+              placeholder="Song Title"
+            />
+          </Form.Item>
+
+          <Form.Item label="Album Name (Optional)">
+            <Input
+              value={editingSong?.album_name}
+              onChange={(e) =>
+                setEditingSong({ ...editingSong, album_name: e.target.value })
+              }
+              placeholder="Album Name (Optional)"
+            />
+          </Form.Item>
+
+          <Form.Item label="Genre">
+            <Select
+              value={editingSong?.genre}
+              onChange={(value) =>
+                setEditingSong({
+                  ...editingSong,
+                  genre: value as
+                    | "rnb"
+                    | "country"
+                    | "classic"
+                    | "rock"
+                    | "jazz",
+                })
+              }
+            >
+              <Option value="rnb">RNB</Option>
+              <Option value="country">Country</Option>
+              <Option value="classic">Classic</Option>
+              <Option value="rock">Rock</Option>
+              <Option value="jazz">Jazz</Option>
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

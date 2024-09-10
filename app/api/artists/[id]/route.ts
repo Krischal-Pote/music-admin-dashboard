@@ -46,8 +46,6 @@ export async function PUT(
   const artistId = params.id;
   const updatedData = await request.json();
 
-  console.log("artist id", artistId);
-
   if (!artistId) {
     return NextResponse.json(
       { success: false, message: "artist id not provided" },

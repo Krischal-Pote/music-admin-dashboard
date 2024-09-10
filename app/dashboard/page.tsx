@@ -7,31 +7,30 @@ import ArtistTab from "../../components/dashboard/ArtistTab";
 import MusicTab from "../../components/dashboard/MusicTab";
 import { getCurrentUser } from "@/utils/auth"; // Utility to get the current user
 import { UserRole } from "../../types"; // Define user roles as a type
+import SongsPage from "./songs/page";
 
 const DashboardPage: React.FC = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<string>("");
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const user = getCurrentUser();
 
   useEffect(() => {
-    const fetchUser = () => {
-      const user = getCurrentUser();
-      if (!user) {
-        router.push("/");
+    if (!user) {
+      router.push("/");
+    } else {
+      setUserRole(user.role);
+      // Set the initial active tab based on user role
+      if (user.role === "super_admin") {
+        setActiveTab("user");
+      } else if (user.role === "artist_manager") {
+        setActiveTab("artist");
+      } else if (user.role === "artist") {
+        setActiveTab("music");
       } else {
-        setUserRole(user.role);
-        // Set the initial active tab based on user role
-        if (user.role === "super_admin") {
-          setActiveTab("user");
-        } else if (user.role === "artist_manager") {
-          setActiveTab("artist");
-        } else if (user.role === "artist") {
-          setActiveTab("music");
-        }
+        setActiveTab("songs");
       }
-    };
-
-    fetchUser();
+    }
   }, [router]);
 
   const renderTabContent = () => {
@@ -46,17 +45,18 @@ const DashboardPage: React.FC = () => {
       return <ArtistTab />;
     }
 
-    if (
-      activeTab === "music" &&
-      (userRole === "artist_manager" || userRole === "artist")
-    ) {
+    if (activeTab === "music" && userRole === "artist") {
       return <MusicTab userRole={userRole} />;
+    }
+
+    if (activeTab === "songs") {
+      return <SongsPage />;
     }
 
     return null;
   };
 
-  if (!userRole) {
+  if (!user || !userRole) {
     return null;
   }
 
@@ -86,7 +86,7 @@ const DashboardPage: React.FC = () => {
                 Artist Management
               </button>
             )}
-            {(userRole === "artist_manager" || userRole === "artist") && (
+            {userRole === "artist" && (
               <button
                 className={`px-4 py-2 text-white ${
                   activeTab === "music" ? "bg-blue-500" : "bg-gray-500"
@@ -96,6 +96,14 @@ const DashboardPage: React.FC = () => {
                 Music Management
               </button>
             )}
+            <button
+              className={`px-4 py-2 text-white ${
+                activeTab === "songs" ? "bg-blue-500" : "bg-gray-500"
+              }`}
+              onClick={() => setActiveTab("songs")}
+            >
+              Songs
+            </button>
           </div>
         </div>
       </div>
