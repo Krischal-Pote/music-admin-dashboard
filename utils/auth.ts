@@ -10,9 +10,13 @@ export interface DecodedToken extends JwtPayload {
 }
 
 export const generateToken = (user: DecodedToken): string => {
-  return jwt.sign({ id: user.id, role: user.role }, SECRET_KEY, {
-    expiresIn: "1h",
-  });
+  return jwt.sign(
+    { id: user.id, role: user.role, name: user.name },
+    SECRET_KEY,
+    {
+      expiresIn: "1h",
+    }
+  );
 };
 
 export const verifyToken = (token: string): DecodedToken | null => {

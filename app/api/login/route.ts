@@ -25,7 +25,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const token = generateToken({ id: user._id, role: user.role });
+    const token = generateToken({
+      id: user._id,
+      role: user.role,
+      name: user.first_name + " " + user.last_name,
+    });
+
+    console.log("token", token);
 
     return NextResponse.json(
       { message: "Login successful", token },

@@ -11,6 +11,7 @@ export const getSongsForArtist = async (artistId: string) => {
 };
 
 export const createSong = async (songData: any) => {
+  console.log("song data", songData);
   try {
     const response = await fetch(`/api/songs`, {
       method: "POST",
@@ -18,10 +19,7 @@ export const createSong = async (songData: any) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        title: songData.title,
-        album_name: songData.album_name,
-        genre: songData.genre,
-        artistId: songData.artistId,
+        ...songData,
       }),
     });
 

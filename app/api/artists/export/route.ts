@@ -9,7 +9,6 @@ export async function GET() {
   const artists = await db.collection("artists").find({}).toArray();
 
   const fields = [
-    "_id",
     "name",
     "dob",
     "gender",
@@ -20,7 +19,6 @@ export async function GET() {
 
   const csv = parse(
     artists.map((artist) => ({
-      _id: artist._id.toString(),
       name: artist.name,
       dob: artist.dob ? new Date(artist.dob).toLocaleDateString() : "",
       gender: artist.gender,

@@ -33,12 +33,13 @@ const MusicTab: React.FC<MusicTabProps> = ({ userRole }) => {
   const [songs, setSongs] = useState<Song[]>([]);
   const user = getCurrentUser();
   const artistId = user?.id;
-
   const [newSong, setNewSong] = useState({
     title: "",
     album_name: "",
     genre: "rnb",
     artistId: artistId,
+    artist_name: user?.name,
+    release_date: "",
   });
   const [editingSong, setEditingSong] = useState<{
     id: string;
@@ -61,6 +62,7 @@ const MusicTab: React.FC<MusicTabProps> = ({ userRole }) => {
     try {
       if (artistId) {
         const data = await getSongsForArtist(artistId);
+        console.log("data", data);
         setSongs(data.songs);
       }
     } catch (error) {
@@ -69,6 +71,8 @@ const MusicTab: React.FC<MusicTabProps> = ({ userRole }) => {
       setLoading(false);
     }
   };
+
+  console.log("new song", newSong);
 
   const handleCreateSong = async () => {
     try {
@@ -80,6 +84,8 @@ const MusicTab: React.FC<MusicTabProps> = ({ userRole }) => {
           album_name: "",
           genre: "rnb",
           artistId: artistId,
+          artist_name: user?.name,
+          release_date: "",
         });
         setIsModalVisible(false);
       } else {
@@ -134,7 +140,14 @@ const MusicTab: React.FC<MusicTabProps> = ({ userRole }) => {
   };
 
   const handleCancel = () => {
-    setNewSong({ title: "", album_name: "", genre: "rnb", artistId: "" });
+    setNewSong({
+      title: "",
+      album_name: "",
+      genre: "rnb",
+      artistId: "",
+      release_date: "",
+      artist_name: "",
+    });
     setIsModalVisible(false);
   };
 
@@ -189,6 +202,16 @@ const MusicTab: React.FC<MusicTabProps> = ({ userRole }) => {
               <Option value="jazz">Jazz</Option>
             </Select>
           </Form.Item>
+
+          <Form.Item label="Release Date">
+            <Input
+              type="date"
+              value={newSong.release_date}
+              onChange={(e) =>
+                setNewSong({ ...newSong, release_date: e.target.value })
+              }
+            />
+          </Form.Item>
         </Form>
       </Modal>
       {loading ? (
@@ -200,6 +223,7 @@ const MusicTab: React.FC<MusicTabProps> = ({ userRole }) => {
               <th className="px-4 py-2">Title</th>
               <th className="px-4 py-2">Album</th>
               <th className="px-4 py-2">Genre</th>
+              <th className="px-4 py-2">Release Date</th>
               {(userRole === "artist" || userRole === "artist_manager") && (
                 <th className="px-4 py-2">Actions</th>
               )}
@@ -211,6 +235,7 @@ const MusicTab: React.FC<MusicTabProps> = ({ userRole }) => {
                 <td className="border px-4 py-2">{song.title}</td>
                 <td className="border px-4 py-2">{song.album_name}</td>
                 <td className="border px-4 py-2">{song.genre}</td>
+                <td className="border px-4 py-2">{song.released_date}</td>
                 {(userRole === "artist" || userRole === "artist_manager") && (
                   <td className="border px-4 py-2">
                     <Button

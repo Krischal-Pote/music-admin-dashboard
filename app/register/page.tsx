@@ -36,7 +36,6 @@ const RegisterPage: React.FC = () => {
   const validateForm = () => {
     const errors: any = {};
 
-    // Check required fields
     if (!formData.first_name) errors.first_name = "First name is required";
     if (!formData.last_name) errors.last_name = "Last name is required";
     if (!formData.email) {
@@ -48,17 +47,15 @@ const RegisterPage: React.FC = () => {
     if (formData.password.length < 6)
       errors.password = "Password must be at least 6 characters";
 
-    // Validate Date of Birth
     if (formData.dob) {
       const dobDate = new Date(formData.dob);
       const today = new Date();
       if (dobDate > today) errors.dob = "Date of birth cannot be in the future";
     }
-
-    // Validate Address
+    if (!formData.dob) errors.dob = "DOB is required";
+    if (!formData.phone) errors.phone = "Phone is required";
     if (!formData.address) errors.address = "Address is required";
 
-    // Check role
     if (!formData.role) errors.role = "Role is required";
 
     setValidationErrors(errors);
@@ -177,6 +174,9 @@ const RegisterPage: React.FC = () => {
               placeholder="Phone"
               className="w-full p-2 border border-gray-300 rounded mt-1 text-black"
             />
+            {validationErrors.phone && (
+              <p className="text-red-500 text-sm">{validationErrors.phone}</p>
+            )}
           </div>
           <div>
             <input
@@ -239,7 +239,7 @@ const RegisterPage: React.FC = () => {
           <div className="flex justify-center">
             <button
               type="submit"
-              className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition duration-200"
+              className="bg-blue-500 text-white py-2 px-4  rounded hover:bg-blue-600 transition duration-200"
             >
               Register
             </button>

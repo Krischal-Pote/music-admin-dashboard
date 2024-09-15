@@ -49,6 +49,8 @@ export async function POST(
 
     const newSong = {
       artistId: new ObjectId(songData.artistId), // Ensure artistId is correctly processed
+      artist_name: songData.artist_name,
+      released_date: songData.release_date,
       title: songData.title,
       album_name: songData.album_name || null,
       genre: songData.genre,

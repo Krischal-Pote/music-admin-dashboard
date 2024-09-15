@@ -1,5 +1,4 @@
 export const getArtists = async (page: number) => {
-  // Make an API call to fetch paginated artists
   const response = await fetch(`/api/artists?page=${page}`);
   return await response.json();
 };

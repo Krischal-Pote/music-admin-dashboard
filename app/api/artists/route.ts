@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     const db = client.db("music");
 
     const artist = {
-      name: artistData.name,
+      artist_name: artistData.name,
       dob: artistData.dob,
       gender: artistData.gender,
       address: artistData.address,

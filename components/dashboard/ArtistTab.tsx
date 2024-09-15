@@ -17,13 +17,14 @@ import { getCurrentUser } from "@/utils/auth";
 
 const ArtistTab: React.FC = () => {
   const [artists, setArtists] = useState<any[]>([]);
+  console.log("artists", artists);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [selectedArtist, setSelectedArtist] = useState<any>(null);
+  const [isArtistModalVisible, setIsArtistModalVisible] = useState(false); // Control modal visibility
   const router = useRouter();
   const user = getCurrentUser();
-
   useEffect(() => {
     fetchArtists(currentPage);
   }, [currentPage]);
@@ -36,22 +37,32 @@ const ArtistTab: React.FC = () => {
     setLoading(false);
   };
 
+  // Function to handle adding a new artist
+  const handleAddArtist = () => {
+    setSelectedArtist(null); // Clear selected artist for new artist creation
+    setIsArtistModalVisible(true); // Show the modal for adding a new artist
+  };
+
   const handleEditArtist = (artist: any) => {
-    setSelectedArtist(artist);
+    setSelectedArtist(artist); // Set the selected artist for editing
+    setIsArtistModalVisible(true); // Show the modal for editing
   };
 
   const handleUpdateArtist = async (artistId, updatedData) => {
     await updateArtist(artistId, updatedData);
     fetchArtists(currentPage); // Refresh artist list
   };
-  const handleDeleteArtist = (artistId) => {
+
+  const handleDeleteArtist = async (artistId) => {
+    const cleanedArtistId = artistId;
+
     Modal.confirm({
       title: "Are you sure you want to delete this artist?",
       okText: "Yes",
       okType: "danger",
       cancelText: "No",
       onOk: async () => {
-        await deleteArtist(artistId);
+        await deleteArtist(cleanedArtistId);
         fetchArtists(currentPage);
       },
       onCancel() {},
@@ -64,11 +75,8 @@ const ArtistTab: React.FC = () => {
       skipEmptyLines: true,
       complete: async (result) => {
         const importedArtists = result.data;
-
         await importCSV(importedArtists);
-
         setArtists(importedArtists);
-
         fetchArtists(currentPage);
       },
       error: (error) => {
@@ -85,7 +93,7 @@ const ArtistTab: React.FC = () => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "artists.csv"; // Name of the file
+    a.download = "artists.csv";
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -95,13 +103,11 @@ const ArtistTab: React.FC = () => {
     <div>
       <h2 className="text-2xl font-bold mb-4">Artist Management</h2>
 
-      {/* Create Artist */}
       {user?.role === "artist_manager" && (
         <>
-          <ArtistModal
-            artist={selectedArtist}
-            onUpdate={() => fetchArtists(currentPage)}
-          />
+          <Button type="primary" onClick={handleAddArtist}>
+            Add Artist
+          </Button>
           <div className="my-4 flex justify-between">
             <div>
               Import the artists data from a CSV file
@@ -121,7 +127,13 @@ const ArtistTab: React.FC = () => {
         </>
       )}
 
-      {/* Artist List */}
+      <ArtistModal
+        artist={selectedArtist}
+        visible={isArtistModalVisible} // Pass visibility control
+        onClose={() => setIsArtistModalVisible(false)} // Close the modal when action completes
+        onUpdate={() => fetchArtists(currentPage)} // Refresh artist list after changes
+      />
+
       {loading ? (
         <p>Loading artists...</p>
       ) : (
@@ -145,7 +157,7 @@ const ArtistTab: React.FC = () => {
                 <tbody>
                   {artists.map((artist) => (
                     <tr key={artist._id} className="mb-4">
-                      <td className="border px-4 py-2">{artist.name}</td>
+                      <td className="border px-4 py-2">{artist.artist_name}</td>
                       <td className="border px-4 py-2">
                         {artist.dob
                           ? new Date(artist.dob).toLocaleDateString()
@@ -172,21 +184,20 @@ const ArtistTab: React.FC = () => {
                           className="mr-2"
                           type="primary"
                           onClick={() =>
-                            router.push(
-                              `/dashboard/songs?artistId=${artist._id}`
-                            )
+                            router.push(`/dashboard/songs/${artist._id}`)
                           }
                         >
                           View Songs
                         </Button>
                         <Button
                           className="mr-2"
-                          type="default"
+                          type="primary"
                           onClick={() => handleEditArtist(artist)}
                         >
                           Edit
                         </Button>
                         <Button
+                          className="mr-2"
                           type="primary"
                           danger
                           onClick={() => handleDeleteArtist(artist._id)}
@@ -199,7 +210,6 @@ const ArtistTab: React.FC = () => {
                 </tbody>
               </table>
 
-              {/* Pagination */}
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}

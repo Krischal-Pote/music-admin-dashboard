@@ -1,12 +1,14 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { getAllSongs } from "../../../utils/songApi";
+import { useRouter, useParams } from "next/navigation";
+import { getSongsForArtist } from "../../../../utils/songApi";
 import { Button } from "antd";
 import { getCurrentUser } from "@/utils/auth";
 
 const SongsPage: React.FC = () => {
   const router = useRouter();
+  const params = useParams();
+  const artistId = params?.id;
   const [songs, setSongs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -17,7 +19,8 @@ const SongsPage: React.FC = () => {
   const fetchSongs = async () => {
     setLoading(true);
     try {
-      const data = await getAllSongs();
+      const data = await getSongsForArtist(artistId);
+      console.log("data", data);
       setSongs(data.songs);
     } catch (error) {
       console.error("Error fetching songs:", error);
@@ -28,7 +31,7 @@ const SongsPage: React.FC = () => {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">All Songs</h2>
+      <h2 className="text-2xl font-bold mb-4">The Artist's Songs</h2>
 
       {loading ? (
         <p>Loading songs...</p>

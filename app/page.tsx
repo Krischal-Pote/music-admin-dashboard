@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button, Spin } from "antd";
 import Link from "next/link";
 import { getCurrentUser } from "@/utils/auth";
 
@@ -10,6 +11,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
   const currentUser = getCurrentUser();
 
@@ -29,19 +31,23 @@ export default function LoginPage() {
     setError("");
     setEmailError("");
     setPasswordError("");
+    setLoading(true);
 
     if (!email) {
       setEmailError("Email is required");
+      setLoading(false);
       return;
     }
 
     if (!validateEmail(email)) {
       setEmailError("Invalid email format");
+      setLoading(false);
       return;
     }
 
     if (!password) {
       setPasswordError("Password is required");
+      setLoading(false);
       return;
     }
 
@@ -65,6 +71,8 @@ export default function LoginPage() {
     } catch (err) {
       console.error("Error:", err);
       setError("An error occurred while logging in");
+    } finally {
+      setLoading(false); // Reset loading
     }
   };
 
@@ -109,12 +117,20 @@ export default function LoginPage() {
           <div className="flex justify-center text-blue-500 cursor-pointer">
             <Link href={"/register"}>Register</Link>
           </div>
-          <button
-            type="submit"
-            className="w-full py-2 px-4 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700"
+          <Button
+            onClick={handleSubmit}
+            className="w-full py-2 px-4 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700 relative"
+            disabled={loading}
           >
-            Sign In
-          </button>
+            {loading ? (
+              <Spin
+                size="small"
+                className="absolute left-1/2 transform -translate-x-1/2 top-1/2 -translate-y-1/2"
+              />
+            ) : (
+              "Sign In"
+            )}
+          </Button>
         </form>
       </div>
     </div>
